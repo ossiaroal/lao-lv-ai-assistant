@@ -28,59 +28,58 @@
     <button id="send-btn">发送</button>
   </div>
 
-  <script>
-    const chatContainer = document.getElementById('chat-container');
-    const inputEl = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
+<script>
+  const chatContainer = document.getElementById('chat-container');
+  const inputEl = document.getElementById('user-input');
+  const sendBtn = document.getElementById('send-btn');
 
-// 使用本项目的 Serverless 代理接口
-const DEEPSEEK_ENDPOINT = '/api/chat';
+  // 使用本项目的 Serverless 代理接口
+  const DEEPSEEK_ENDPOINT = '/api/chat';
 
+  function appendMessage(text, sender) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message ' + sender;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + sender;
+    bubble.textContent = text;
+    wrapper.appendChild(bubble);
+    chatContainer.appendChild(wrapper);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
 
-    function appendMessage(text, sender) {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'message ' + sender;
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble ' + sender;
-      bubble.textContent = text;
-      wrapper.appendChild(bubble);
-      chatContainer.appendChild(wrapper);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+  async function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+    appendMessage(text, 'user');
+    inputEl.value = '';
+
+    // 先显示加载状态
+    appendMessage('正在思考中...', 'bot');
+    try {
+      const resp = await fetch(DEEPSEEK_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: text })
+      });
+      const data = await resp.json();
+      // 替换占位加载消息
+      const bots = chatContainer.querySelectorAll('.message.bot');
+      bots[bots.length - 1].remove();
+
+      // 根据代理返回的结构获取回复字段
+      const reply = data.reply || data.choices?.[0]?.message?.content || '抱歉，未收到响应';
+      appendMessage(reply, 'bot');
+    } catch (err) {
+      console.error(err);
+      const bots = chatContainer.querySelectorAll('.message.bot');
+      bots[bots.length - 1].remove();
+      appendMessage('出错了，请稍后再试。', 'bot');
     }
+  }
 
-    async function sendMessage() {
-      const text = inputEl.value.trim();
-      if (!text) return;
-      appendMessage(text, 'user');
-      inputEl.value = '';
+  sendBtn.addEventListener('click', sendMessage);
+  inputEl.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+</script>
 
-      // 先显示加载状态
-      appendMessage('正在思考中...', 'bot');
-      try {
-        const resp = await fetch(DEEPSEEK_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          body: JSON.stringify({ prompt: text })
-        });
-        const data = await resp.json();
-        // 替换占位加载消息
-        const bots = chatContainer.querySelectorAll('.message.bot');
-        bots[bots.length - 1].remove();
-
-        // 根据 Deepseek 返回结构获取回复字段
-        const reply = data.reply || data.choices?.[0]?.message?.content || '抱歉，未收到响应';
-        appendMessage(reply, 'bot');
-      } catch (err) {
-        console.error(err);
-        const bots = chatContainer.querySelectorAll('.message.bot');
-        bots[bots.length - 1].remove();
-        appendMessage('出错了，请稍后再试。', 'bot');
-      }
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-    inputEl.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-  </script>
 </body>
 </html>
