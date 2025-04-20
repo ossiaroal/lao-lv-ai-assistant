@@ -33,10 +33,9 @@
     const inputEl = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
 
-    // Deepseek API Key，请替换为你的实际 Key
-    const DEEPSEEK_API_KEY = 'sk-003d2b94200140f0bc7a8306fc325155';
-    // Deepseek 聊天端点
-    const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/v1/chat';
+// 使用本项目的 Serverless 代理接口
+const DEEPSEEK_ENDPOINT = '/api/chat';
+
 
     function appendMessage(text, sender) {
       const wrapper = document.createElement('div');
@@ -62,8 +61,6 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + DEEPSEEK_API_KEY
-          },
           body: JSON.stringify({ prompt: text })
         });
         const data = await resp.json();
